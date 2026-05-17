@@ -19,7 +19,7 @@ import numpy as np
 
 from src.config.settings import settings
 from src.utils.logger import get_logger
-from .embedder import OllamaEmbedder
+from .embedder import create_embedder
 
 logger = get_logger(__name__)
 
@@ -30,7 +30,7 @@ _TAG_RE = re.compile(r"#([\w/\-áéíóúüñÁÉÍÓÚÜÑ]+)")
 class VaultIndexer:
     def __init__(self, db_path: Optional[Path] = None) -> None:
         self._db_path = db_path or settings.vault_index_db_path
-        self._embedder = OllamaEmbedder()
+        self._embedder = create_embedder()
         self._conn = self._open_db()
 
     # ── Setup ──────────────────────────────────────────────────────────────────

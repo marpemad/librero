@@ -1,20 +1,21 @@
 """
-Descripción de imágenes con un modelo de visión local servido por Ollama.
+Descripción de imágenes con modelo de visión (Ollama local o Gemini en nube).
 
 Uso típico:
     from src.utils.vision import describe_image
     md = describe_image("/path/foto.jpg")  # devuelve markdown estructurado
 
-Si el modelo no está disponible (no `pull`-eado, sin RAM, etc.), devuelve
-cadena vacía y deja un warning en logs — el extractor seguirá adelante con
-lo que tenga (OCR, en su defecto).
+El proveedor se determina por LLM_PROVIDER en .env:
+- "ollama": usa modelo local (qwen2.5vl:7b o similar)
+- "gemini": usa Gemini Vision API
 """
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 from typing import Optional
 
-import ollama
+import google.generativeai as genai
 
 from src.config.settings import settings
 from src.utils.logger import get_logger
@@ -47,22 +48,16 @@ REGLAS:
 - Si la imagen es ininteligible (toda negra, ruido, etc.), dilo en `## Descripción general` y deja vacíos los demás campos."""
 
 
-def describe_image(
+def _describe_image_with_ollama(
     path: str | Path,
-    language: str = "español",
-    *,
-    model: Optional[str] = None,
+    language: str,
+    model: str,
 ) -> str:
-    """Llama al modelo de visión configurado y devuelve la descripción markdown.
-
-    Devuelve "" si el modelo no está disponible o falla.
-    """
-    model = model or settings.vision_model
-    if not model:
-        return ""
+    """Describe imagen con Ollama (modelo local)."""
+    import ollama  # Lazy import
     import time as _time
     t0 = _time.time()
-    logger.info("Vision: describiendo imagen %s con %s …", Path(path).name, model)
+    
     try:
         # Timeout largo (5 min) — la primera carga del modelo puede tardar
         client = ollama.Client(host=settings.ollama_host, timeout=300.0)
@@ -85,7 +80,7 @@ def describe_image(
         msg = resp.get("message", {})
         text = (msg.get("content") or msg.get("thinking") or "").strip()
         if not text:
-            logger.warning("Vision: respuesta vacía de %s para %s", model, path)
+            logger.warning("Vision (Ollama): respuesta vacía de %s para %s", model, path)
             return ""
         # Limpieza ligera: a veces el modelo envuelve en ```markdown ... ```
         if text.startswith("```"):
@@ -94,10 +89,110 @@ def describe_image(
                 lines = lines[:-1]
             text = "\n".join(lines).strip()
         logger.info(
-            "Vision: descripción lista (%d chars en %.1fs)",
+            "Vision (Ollama): descripción lista (%d chars en %.1fs)",
             len(text), _time.time() - t0,
         )
         return text
+    except Exception as e:
+        logger.warning("Vision (Ollama) error: %s", e)
+        return ""
+
+
+def _describe_image_with_gemini(
+    path: str | Path,
+    language: str,
+) -> str:
+    """Describe imagen con Gemini Vision API."""
+    import time as _time
+    t0 = _time.time()
+    
+    if not settings.gemini_api_key:
+        logger.error("Vision (Gemini): GEMINI_API_KEY no configurada")
+        return ""
+    
+    try:
+        genai.configure(api_key=settings.gemini_api_key)
+        
+        # Leer imagen y codificarla como base64
+        path_obj = Path(path)
+        if not path_obj.exists():
+            logger.warning("Vision (Gemini): archivo no encontrado: %s", path)
+            return ""
+        
+        # Determinar MIME type
+        suffix = path_obj.suffix.lower()
+        mime_types = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+        }
+        mime_type = mime_types.get(suffix, "image/jpeg")
+        
+        # Leer y codificar imagen
+        with open(path_obj, "rb") as f:
+            image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+        
+        # Usar Gemini 2.0 Flash (mejor para visión)
+        model = settings.gemini_model or "gemini-2.0-flash"
+        
+        # Crear cliente y procesar
+        client = genai.GenerativeModel(model)
+        response = client.generate_content([
+            VISION_PROMPT.format(language=language),
+            {
+                "mime_type": mime_type,
+                "data": image_data,
+            }
+        ])
+        
+        text = response.text.strip() if response else ""
+        if not text:
+            logger.warning("Vision (Gemini): respuesta vacía para %s", path)
+            return ""
+        
+        logger.info(
+            "Vision (Gemini): descripción lista (%d chars en %.1fs)",
+            len(text), _time.time() - t0,
+        )
+        return text
+    except Exception as e:
+        logger.warning("Vision (Gemini) error: %s", e)
+        return ""
+
+
+def describe_image(
+    path: str | Path,
+    language: str = "español",
+    *,
+    model: Optional[str] = None,
+) -> str:
+    """Llama al modelo de visión configurado y devuelve la descripción markdown.
+
+    Devuelve "" si el modelo no está disponible o falla.
+    
+    El proveedor de visión se determina por LLM_PROVIDER:
+    - gemini: usa Gemini Vision API (ignora parámetro 'model')
+    - ollama: usa modelo local (parámetro 'model')
+    """
+    provider = settings.llm_provider.lower().strip()
+    
+    logger.info("Vision: describiendo imagen %s con proveedor=%s", Path(path).name, provider)
+    
+    if provider == "gemini":
+        return _describe_image_with_gemini(path, language)
+    
+    elif provider == "ollama":
+        model = model or settings.vision_model
+        if not model:
+            logger.warning("Vision (Ollama): no hay modelo configurado en VISION_MODEL")
+            return ""
+        return _describe_image_with_ollama(path, language, model)
+    
+    else:
+        logger.error("Vision: proveedor desconocido: %s", provider)
+        return ""
     except Exception as exc:
         logger.warning(
             "Vision desactivada (%s). Para activarla: `ollama pull %s` "
