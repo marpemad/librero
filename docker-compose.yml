@@ -1,0 +1,90 @@
+# ───────────────────────────────────────────────────────────────────────
+# Librero — orquestación con Docker Compose.
+#
+# OPCIÓN 1: Cloud con Gemini (DEFECTO — recomendado para Umbrel/servidores)
+#     Requiere: GEMINI_API_KEY en .env
+#     Comando: docker compose up -d bot
+#
+# OPCIÓN 2: Local con Ollama (Mac/PC con Ollama)
+#     Requiere: Ollama corriendo en http://localhost:11434 (Mac) o http://host.docker.internal:11434 (Docker)
+#     Archivos: docker-compose.local.yml sobrescriba los valores para Ollama
+#     Comando: docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local up -d
+#
+#     ALTERNATIVA: Si renombras docker-compose.local.yml a docker-compose.override.yml:
+#       docker compose --profile local up -d
+#
+# SETUP INICIAL:
+#     1. cp .env.example .env
+#     2. Rellena TELEGRAM_BOT_TOKEN, OBSIDIAN_VAULT_PATH, y GEMINI_API_KEY
+#     3. docker compose up -d bot
+#
+# PARA CAMBIAR A OLLAMA LOCAL:
+#     1. cp .env.local.example .env.local
+#     2. Rellena OBSIDIAN_VAULT_PATH y TELEGRAM_BOT_TOKEN (igual que en .env)
+#     3. docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local up -d
+# ───────────────────────────────────────────────────────────────────────
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: librero:latest
+    container_name: librero-bot
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Provider por defecto: gemini (nube). En modo local, se sobrescribe a ollama.
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      # Si Ollama corre como servicio en este compose, su host es `ollama:11434`.
+      # Si está en el host de Docker (Mac), usa http://host.docker.internal:11434.
+      # OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+    volumes:
+      # Vault de Obsidian — apunta a la ruta de tu Vault en el host
+      - ${VAULT_HOST_PATH:-./data/vault}:/data/vault
+      # Datos persistentes del bot (DBs, tokens) — NO los borres
+      - ./data/config:/data/config
+      - ./data/cache:/data/cache
+      # Temp dir — descargas efímeras (se puede vaciar sin riesgo)
+      - ./data/temp:/data/temp
+    # El puerto OAuth solo se usa durante /calauth (servidor local efímero).
+    # Lo exponemos solo en localhost por seguridad.
+    ports:
+      - "127.0.0.1:8765:8765"
+    networks:
+      - librero
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false
+    # Logs rotados para que no crezcan sin límite
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Servicio Ollama opcional — actívalo con `docker compose --profile local up -d`
+  # Usa: docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local up -d
+  ollama:
+    image: ollama/ollama:latest
+    container_name: librero-ollama
+    restart: unless-stopped
+    profiles: ["local"]
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    networks:
+      - librero
+    # Si tienes GPU NVIDIA en Linux, descomenta esto:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+networks:
+  librero:
+    driver: bridge

@@ -1,0 +1,46 @@
+# Python artifacts — se regeneran en el contenedor
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenv local — no lo queremos dentro de la imagen
+.venv/
+venv/
+
+# Secretos — se montan en runtime, no se hornean en la imagen
+.env
+.env.local
+gcal_credentials.json
+gcal_token.json
+
+# Datos persistentes (montados como volumen en runtime)
+data/
+*.db
+*.db-journal
+/tmp/librero/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Docs y meta — la imagen no los necesita
+README.md
+*.md
+!requirements.txt
+docs/

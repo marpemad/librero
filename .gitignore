@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+.python-version
+
+# Variables de entorno (NUNCA commitear secretos)
+.env
+.env.local
+.env.*.local
+
+# Credenciales Google
+gcal_credentials.json
+gcal_token.json
+
+# Bases de datos locales del bot
+*.db
+*.db-journal
+/tmp/librero/
+
+# Carpeta de datos persistente (Docker)
+data/
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage / build
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/

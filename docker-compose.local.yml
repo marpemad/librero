@@ -1,0 +1,16 @@
+# ───────────────────────────────────────────────────────────────────────
+# Docker Compose overrides para modo LOCAL con Ollama
+#
+# USO:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local up -d
+#
+# O más simple (si renombras este archivo a docker-compose.override.yml):
+#   docker compose --profile local up -d
+# ───────────────────────────────────────────────────────────────────────
+services:
+  bot:
+    environment:
+      # Override: cuando usas --profile local, usa Ollama como provider
+      LLM_PROVIDER: ollama
+      # En Mac, Ollama en el host está disponible como host.docker.internal
+      OLLAMA_HOST: http://host.docker.internal:11434

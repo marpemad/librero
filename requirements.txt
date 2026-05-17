@@ -1,0 +1,43 @@
+# --- Core bot ---
+python-telegram-bot==21.6        # API asíncrona moderna (v20+)
+python-dotenv==1.0.1             # Variables de entorno desde .env
+
+# --- LLM local ---
+ollama>=0.6.1                    # Cliente oficial Python para Ollama (>=0.6 para parámetro think=)
+
+# --- Búsqueda en internet ---
+ddgs>=1.0                        # Sucesor oficial de duckduckgo-search (misma API, sin rate-limit del endpoint antiguo)
+
+# --- Web scraping & papers ---
+trafilatura==1.12.2              # Extractor de contenido principal de webs
+beautifulsoup4==4.12.3
+httpx==0.27.2                    # Cliente HTTP asíncrono moderno
+lxml==5.3.0
+lxml_html_clean
+
+# --- Documentos locales ---
+PyMuPDF>=1.25.0                  # PDFs (rápido y robusto, mejor que pypdf)
+python-docx==1.1.2               # Word
+EbookLib==0.18                   # ePub
+pandas==2.2.3                    # CSV / Google Sheets como CSV
+
+# --- Multimedia ---
+yt-dlp>=2026.3.17                # YouTube, Spotify, podcasts, RSS, etc. (actualizar frecuentemente)
+youtube-transcript-api>=0.6.2    # Transcripciones rápidas si están disponibles
+faster-whisper>=1.1.0            # Whisper optimizado para Apple Silicon (Metal/CoreML)
+
+# --- Utilidades ---
+python-slugify==8.0.4            # Para nombres de archivo válidos en el Vault
+tenacity==9.0.0                  # Reintentos con backoff
+lingua-language-detector>=2.0.0  # Detección de idioma fiable (mejor que langdetect, soporta ES/EN/FR/IT…)
+
+# --- Google Calendar ---
+google-api-python-client>=2.100.0  # API cliente de Google (Calendar, Drive…)
+google-auth-oauthlib>=1.1.0        # OAuth2 flow para aplicaciones instaladas
+google-auth-httplib2>=0.2.0        # Transporte HTTP para google-auth
+
+# --- Scheduler ---
+apscheduler>=3.10.4                # Jobs periódicos + cron (resúmenes diarios/semanales)
+
+# --- Gemini (opcional, solo si LLM_PROVIDER=gemini) ---
+google-generativeai>=0.8.0         # SDK oficial de Google Gemini

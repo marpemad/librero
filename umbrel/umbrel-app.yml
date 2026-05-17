@@ -1,0 +1,52 @@
+manifestVersion: 1
+id: librero
+category: automation
+name: Librero
+version: "1.0.0"
+tagline: Sintetiza contenido en notas de Obsidian con LLMs vía Telegram
+description: >-
+  Librero es un bot personal de Telegram que ingiere contenido de múltiples fuentes
+  (YouTube, podcasts, PDFs, EPUBs, webs, papers, imágenes, mensajes de voz, conceptos
+  estructurados…) y lo sintetiza con un LLM —local con Ollama o en la nube con
+  Google Gemini— para guardarlo como notas Markdown enriquecidas dentro de tu Vault
+  de Obsidian.
+
+
+  Features:
+
+  - Síntesis con frontmatter YAML rico (autor, año, ISBN, DOI, URL, idioma…).
+
+  - Estructura Zettelkasten: Resumen, Puntos Clave, Citas Destacadas, Personas,
+    Glosario, Análisis Profundo, Preguntas y Aplicación.
+
+  - Wikilinks reales gracias a Vault Intel (embeddings con nomic-embed-text).
+
+  - Detección de duplicados con sugerencia de actualizar la nota existente.
+
+  - Tablón Kanban de tareas dentro del Vault.
+
+  - Listas curadas (libros, series, películas, podcasts, juegos…).
+
+  - 📅 Integración Google Calendar: leer, crear y editar eventos; marcar eventos
+    para notificación; resumen diario y semanal automáticos.
+
+  - 🔌 Dos backends LLM intercambiables vía .env: Ollama (local, privado, gratis)
+    o Gemini (cloud, rápido, requiere API key).
+developer: Marc Pérez
+website: https://github.com/marcperez/librero
+dependencies: []
+repo: https://github.com/marcperez/librero
+support: https://github.com/marcperez/librero/issues
+port: 8765
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+submitter: Marc Pérez
+submission: https://github.com/marcperez/librero
+releaseNotes: >-
+  Primera release. Incluye síntesis con Ollama o Gemini, integración Google
+  Calendar, scheduler de notificaciones, tablón Kanban y listas curadas.

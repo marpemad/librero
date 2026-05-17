@@ -1,0 +1,44 @@
+# ───────────────────────────────────────────────────────────────────────
+# docker-compose.yml — versión para UmbrelOS 1.7.2+
+#
+# Umbrel mapea automáticamente:
+#   ${APP_DATA_DIR}  → /home/umbrel/umbrel/app-data/librero
+#   ${APP_LIGHTNING_NODE_IP} y otros (no usados aquí)
+#
+# Configuración por defecto: modo cloud (Gemini).
+# Para usar Ollama local: edita el servicio app (descomenta el bloque ollama) y
+# añade OLLAMA_HOST=http://ollama:11434 al fichero .env de la app.
+# ───────────────────────────────────────────────────────────────────────
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: librero_app_1
+      APP_PORT: 8765
+
+  app:
+    image: ghcr.io/marcperez/librero:latest
+    restart: on-failure
+    stop_grace_period: 1m
+    env_file:
+      - ${APP_DATA_DIR}/.env
+    environment:
+      TZ: Europe/Madrid
+    volumes:
+      # Vault de Obsidian — debe existir en el host. El usuario configura su path
+      # en .env mediante OBSIDIAN_VAULT_PATH (relativo a APP_DATA_DIR).
+      - ${APP_DATA_DIR}/data/vault:/data/vault
+      - ${APP_DATA_DIR}/data/config:/data/config
+      - ${APP_DATA_DIR}/data/cache:/data/cache
+      - ${APP_DATA_DIR}/data/temp:/data/temp
+    # Puerto solo para el flujo OAuth de Google Calendar (efímero, durante /calauth)
+    ports:
+      - "127.0.0.1:8765:8765"
+
+  # Servicio Ollama opcional — descoméntalo si quieres LLM local en lugar de Gemini.
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   restart: on-failure
+  #   volumes:
+  #     - ${APP_DATA_DIR}/data/ollama:/root/.ollama
